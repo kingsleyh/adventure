@@ -9,10 +9,10 @@ class GenericCommands < Commands
 
   def process
     r = condition(/^(l|look)$/i) do |with|
-      GameRequest.new(:look,none,none) unless with.nil?
+      GameRequest.new(:generic,:look,none,none) unless with.nil?
     end
 
-    r
+    option(r)
   end
 
 end

@@ -1,13 +1,18 @@
+require_relative 'response/response_handler'
+require_relative 'event_queue'
+
 class GameManager
 
   def initialize(request)
-    @request = option(request)
+    @request = request
   end
 
-  def response
-    @request.is_some? ?
-    some("got here ok with request: #{@request.command}") :
-    some("I didn't understand that")
+  def game_process
+    EventQueue.instance.add(@request.is_some? ? ResponseHandler.new(@request).game_process : sequence(GameEvent.new(:me, "I didn't understand that".red)))
+  end
+
+  def login_process
+    EventQueue.instance.add(@request.is_some? ? ResponseHandler.new(@request).login_process : sequence(GameEvent.new(:me, "I didn't understand that".red)))
   end
 
 end
