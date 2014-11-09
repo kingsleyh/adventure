@@ -4,7 +4,7 @@ class LoginResponse
 
     def login(game_request)
       sequence(
-        GameEvent.new(:me, "So you want to login huh?"),
+        GameEvent.new(:login, :me, "So you want to login huh?"),
       )
     end
 

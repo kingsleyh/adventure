@@ -2,6 +2,7 @@ require 'celluloid/io'
 require 'totally_lazy'
 require 'term/ansicolor'
 require_relative 'request/request_translator'
+require_relative 'request/instances/login_instance'
 require_relative 'game_manager'
 require_relative 'event_queue'
 
@@ -12,16 +13,12 @@ end
 class MessageHandler
   include Celluloid
 
-  def initialize(received)
-    @request = RequestTranslator.new(received).translate
+  def initialize(received,instance=none)
+    @request = instance.is_some? ? instance.get.new(received).translate : RequestTranslator.new(received).translate
   end
 
-  def game_process
-    GameManager.new(@request).game_process
-  end
-
-  def login_process
-    GameManager.new(@request).login_process
+  def process
+    GameManager.new(@request).process
   end
 
 end
@@ -59,30 +56,6 @@ class GameServer
     loop { async.handle_connection @server.accept }
   end
 
-  def process_game_commands(socket)
-    input = option(socket.readpartial(4096).chomp)
-    if input.is_some?
-      MessageHandler.new(input.get).game_process
-
-      EventQueue.instance.queue.each do |game_event|
-        socket.write game_event.response + "\n"
-        EventQueue.instance.consume(game_event)
-      end
-    end
-  end
-
-  def login_or_create_player(socket)
-    input = option(socket.readpartial(4096).chomp)
-    if input.is_some?
-      MessageHandler.new(input.get).login_process
-
-      EventQueue.instance.queue.each do |game_event|
-        socket.write game_event.response + "\n"
-        EventQueue.instance.consume(game_event)
-      end
-    end
-  end
-
   def handle_connection(socket)
     # @clients = @clients.append(pair(player, socket))
     _, port, host = socket.peeraddr
@@ -91,12 +64,19 @@ class GameServer
     socket.write Welcome.message
     socket.write Welcome.login_message
 
-    p @player.is_some?
     loop {
-      if @player.is_some?
-        process_game_commands(socket)
-      else
-        login_or_create_player(socket)
+      input = option(socket.readpartial(4096).chomp)
+      if input.is_some?
+        if @player.is_some?
+          MessageHandler.new(input.get).process
+        else
+          MessageHandler.new(input.get,LoginInstance).process
+        end
+        EventQueue.instance.queue.each do |game_event|
+          socket.write game_event.response + "\n"
+          EventQueue.instance.consume(game_event)
+        end
+
       end
     }
       # @clients.each {|c| c.write "yay"}

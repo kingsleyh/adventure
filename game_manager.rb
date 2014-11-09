@@ -7,12 +7,8 @@ class GameManager
     @request = request
   end
 
-  def game_process
-    EventQueue.instance.add(@request.is_some? ? ResponseHandler.new(@request).game_process : sequence(GameEvent.new(:me, "I didn't understand that".red)))
-  end
-
-  def login_process
-    EventQueue.instance.add(@request.is_some? ? ResponseHandler.new(@request).login_process : sequence(GameEvent.new(:me, "I didn't understand that".red)))
+  def process
+    EventQueue.instance.add(@request.is_some? ? ResponseHandler.new(@request).process : sequence(GameEvent.new(:unknown, :me, "I didn't understand that".red)))
   end
 
 end
